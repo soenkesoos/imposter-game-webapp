@@ -71,7 +71,7 @@ const GamePage: React.FC = () => {
     // Clear game data
     localStorage.removeItem('players');
     localStorage.removeItem('imposterCount');
-    localStorage.removeItem('role');
+    localStorage.removeItem('word');
     
     navigate('/');
   };
@@ -95,9 +95,9 @@ const GamePage: React.FC = () => {
           
           {!showingRole ? (
             <>
-              <SubTitle>Ready to see your role?</SubTitle>
+              <SubTitle>Ready to see if you're an imposter?</SubTitle>
               <Spacer size="large" />
-              <Button onClick={handleShowRole}>Show My Role</Button>
+              <Button onClick={handleShowRole}>Show My Status</Button>
             </>
           ) : (
             <RoleCard
@@ -121,8 +121,9 @@ const GamePage: React.FC = () => {
           
           <Spacer size="large" />
           
-          <p>The chosen word is: <strong>{word}</strong></p>
-          <p>Regular players should discuss the word while imposters try to blend in!</p>
+          <p>The game has started! All players should now discuss.</p>
+          <p>Regular players know the secret word and should talk about it without directly saying it.</p>
+          <p>Imposters should try to blend in without getting caught!</p>
           
           <Spacer size="large" />
           
