@@ -17,22 +17,6 @@ interface Player {
   name: string;
 }
 
-// Word lists for different languages
-const wordLists = {
-  english: [
-    'apple', 'banana', 'computer', 'bicycle', 'mountain', 'ocean', 
-    'elephant', 'guitar', 'umbrella', 'window', 'pizza', 'castle',
-    'beach', 'forest', 'island', 'library', 'coffee', 'airplane',
-    'camera', 'telephone', 'diamond', 'fountain', 'keyboard', 'painting'
-  ],
-  german: [
-    'Apfel', 'Banane', 'Computer', 'Fahrrad', 'Berg', 'Ozean', 
-    'Elefant', 'Gitarre', 'Regenschirm', 'Fenster', 'Pizza', 'Schloss',
-    'Strand', 'Wald', 'Insel', 'Bibliothek', 'Kaffee', 'Flugzeug',
-    'Kamera', 'Telefon', 'Diamant', 'Brunnen', 'Tastatur', 'Gemälde'
-  ]
-};
-
 type Language = 'english' | 'german';
 
 const HomePage: React.FC = () => {
@@ -44,6 +28,8 @@ const HomePage: React.FC = () => {
   ]);
   const [imposterCount, setImposterCount] = useState<number>(1);
   const [language, setLanguage] = useState<Language>('english');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
   
   const handlePlayerChange = (id: number, name: string) => {
     setPlayers(prev => 
@@ -64,7 +50,7 @@ const HomePage: React.FC = () => {
     setPlayers(prev => prev.filter(player => player.id !== id));
   };
   
-  const handleStartGame = () => {
+  const handleStartGame = async () => {
     // Validate player names
     const validPlayers = players.filter(player => player.name.trim() !== '');
     
@@ -77,19 +63,58 @@ const HomePage: React.FC = () => {
       alert('There must be fewer imposters than players');
       return;
     }
+
+    setIsLoading(true);
+    setError('');
     
-    // Store game data in local storage
-    localStorage.setItem('players', JSON.stringify(validPlayers));
-    localStorage.setItem('imposterCount', imposterCount.toString());
-    localStorage.setItem('language', language);
-    
-    // Generate a random word for non-imposters from the selected language
-    const words = wordLists[language];
-    const selectedWord = words[Math.floor(Math.random() * words.length)];
-    localStorage.setItem('word', selectedWord);
-    
-    // Navigate to game
-    navigate('/game');
+    try {
+      // Fetch a random word from a free API
+      const apiUrl = language === 'english' 
+        ? 'https://random-word-api.herokuapp.com/word'
+        : 'https://random-word-api.herokuapp.com/word?lang=de';
+      
+      const response = await fetch(apiUrl);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch a random word');
+      }
+      
+      const data = await response.json();
+      const word = Array.isArray(data) && data.length > 0 ? data[0] : '';
+      
+      if (!word) {
+        throw new Error('No word received from API');
+      }
+      
+      // Store game data in local storage
+      localStorage.setItem('players', JSON.stringify(validPlayers));
+      localStorage.setItem('imposterCount', imposterCount.toString());
+      localStorage.setItem('language', language);
+      localStorage.setItem('word', word);
+      
+      // Navigate to game
+      navigate('/game');
+    } catch (err) {
+      console.error('Error fetching word:', err);
+      setError('Failed to get a random word. Please try again.');
+      
+      // Fallback to predefined words if API fails
+      const fallbackWords = {
+        english: ['cat', 'dog', 'house', 'tree', 'book', 'car', 'phone', 'chair', 'shoe', 'sun'],
+        german: ['Katze', 'Hund', 'Haus', 'Baum', 'Buch', 'Auto', 'Telefon', 'Stuhl', 'Schuh', 'Sonne']
+      };
+      
+      const fallbackWord = fallbackWords[language][Math.floor(Math.random() * fallbackWords[language].length)];
+      localStorage.setItem('players', JSON.stringify(validPlayers));
+      localStorage.setItem('imposterCount', imposterCount.toString());
+      localStorage.setItem('language', language);
+      localStorage.setItem('word', fallbackWord);
+      
+      // Navigate to game even if API fails, using fallback word
+      navigate('/game');
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const getImposterOptions = () => {
