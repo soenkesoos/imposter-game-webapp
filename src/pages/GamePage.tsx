@@ -20,6 +20,7 @@ const GamePage: React.FC = () => {
   const [players, setPlayers] = useState<Player[]>([]);
   const [imposterCount, setImposterCount] = useState<number>(1);
   const [word, setWord] = useState<string>('');
+  const [language, setLanguage] = useState<string>('english');
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState<number>(-1);
   const [showingRole, setShowingRole] = useState<boolean>(false);
   const [imposters, setImposters] = useState<number[]>([]);

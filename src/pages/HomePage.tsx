@@ -17,6 +17,24 @@ interface Player {
   name: string;
 }
 
+// Word lists for different languages
+const wordLists = {
+  english: [
+    'apple', 'banana', 'computer', 'bicycle', 'mountain', 'ocean', 
+    'elephant', 'guitar', 'umbrella', 'window', 'pizza', 'castle',
+    'beach', 'forest', 'island', 'library', 'coffee', 'airplane',
+    'camera', 'telephone', 'diamond', 'fountain', 'keyboard', 'painting'
+  ],
+  german: [
+    'Apfel', 'Banane', 'Computer', 'Fahrrad', 'Berg', 'Ozean', 
+    'Elefant', 'Gitarre', 'Regenschirm', 'Fenster', 'Pizza', 'Schloss',
+    'Strand', 'Wald', 'Insel', 'Bibliothek', 'Kaffee', 'Flugzeug',
+    'Kamera', 'Telefon', 'Diamant', 'Brunnen', 'Tastatur', 'Gemälde'
+  ]
+};
+
+type Language = 'english' | 'german';
+
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [players, setPlayers] = useState<Player[]>([
@@ -25,6 +43,7 @@ const HomePage: React.FC = () => {
     { id: 2, name: '' }
   ]);
   const [imposterCount, setImposterCount] = useState<number>(1);
+  const [language, setLanguage] = useState<Language>('english');
   
   const handlePlayerChange = (id: number, name: string) => {
     setPlayers(prev => 
@@ -62,11 +81,12 @@ const HomePage: React.FC = () => {
     // Store game data in local storage
     localStorage.setItem('players', JSON.stringify(validPlayers));
     localStorage.setItem('imposterCount', imposterCount.toString());
+    localStorage.setItem('language', language);
     
-    // Generate a random word for non-imposters
-    const nouns = ['banana', 'computer', 'bicycle', 'mountain', 'ocean', 'elephant', 'guitar', 'umbrella', 'window', 'pizza'];
-    const selectedNoun = nouns[Math.floor(Math.random() * nouns.length)];
-    localStorage.setItem('word', selectedNoun);
+    // Generate a random word for non-imposters from the selected language
+    const words = wordLists[language];
+    const selectedWord = words[Math.floor(Math.random() * words.length)];
+    localStorage.setItem('word', selectedWord);
     
     // Navigate to game
     navigate('/game');
@@ -121,6 +141,18 @@ const HomePage: React.FC = () => {
           onChange={(e) => setImposterCount(Number(e.target.value))}
         >
           {getImposterOptions()}
+        </Select>
+        
+        <Spacer size="medium" />
+        
+        <Label htmlFor="languageSelect">Language for Words</Label>
+        <Select
+          id="languageSelect"
+          value={language}
+          onChange={(e) => setLanguage(e.target.value as Language)}
+        >
+          <option value="english">English</option>
+          <option value="german">German</option>
         </Select>
         
         <Spacer size="medium" />
