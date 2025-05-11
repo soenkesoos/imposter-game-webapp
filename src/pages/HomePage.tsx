@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { faker as fakerEN } from '@faker-js/faker';
 import { fakerDE } from '@faker-js/faker';
@@ -32,6 +32,41 @@ const HomePage: React.FC = () => {
   const [language, setLanguage] = useState<Language>('english');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  
+  // Load saved settings and player names when component mounts
+  useEffect(() => {
+    try {
+      // Load saved language preference
+      const savedLanguage = localStorage.getItem('savedLanguage');
+      if (savedLanguage === 'english' || savedLanguage === 'german') {
+        setLanguage(savedLanguage);
+      }
+      
+      // Load saved imposter count
+      const savedImposterCount = localStorage.getItem('savedImposterCount');
+      if (savedImposterCount) {
+        const count = parseInt(savedImposterCount, 10);
+        if (!isNaN(count) && count > 0) {
+          setImposterCount(count);
+        }
+      }
+      
+      // Load saved player names
+      const savedPlayers = localStorage.getItem('savedPlayers');
+      if (savedPlayers) {
+        try {
+          const parsedPlayers = JSON.parse(savedPlayers);
+          if (Array.isArray(parsedPlayers) && parsedPlayers.length >= 3) {
+            setPlayers(parsedPlayers);
+          }
+        } catch (e) {
+          console.error('Error parsing saved players:', e);
+        }
+      }
+    } catch (e) {
+      console.error('Error loading saved settings:', e);
+    }
+  }, []);
   
   const handlePlayerChange = (id: number, name: string) => {
     setPlayers(prev => 
@@ -81,6 +116,11 @@ const HomePage: React.FC = () => {
       localStorage.setItem('language', language);
       localStorage.setItem('word', word);
       
+      // Save settings for future games
+      localStorage.setItem('savedPlayers', JSON.stringify(validPlayers));
+      localStorage.setItem('savedImposterCount', imposterCount.toString());
+      localStorage.setItem('savedLanguage', language);
+      
       // Navigate to game
       navigate('/game');
     } catch (err) {
@@ -98,6 +138,11 @@ const HomePage: React.FC = () => {
       localStorage.setItem('imposterCount', imposterCount.toString());
       localStorage.setItem('language', language);
       localStorage.setItem('word', fallbackWord);
+      
+      // Save settings for future games
+      localStorage.setItem('savedPlayers', JSON.stringify(validPlayers));
+      localStorage.setItem('savedImposterCount', imposterCount.toString());
+      localStorage.setItem('savedLanguage', language);
       
       // Navigate to game even if API fails, using fallback word
       navigate('/game');
