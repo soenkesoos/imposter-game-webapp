@@ -30,6 +30,7 @@ const GamePage: React.FC = () => {
     const storedPlayers = localStorage.getItem('players');
     const storedImposterCount = localStorage.getItem('imposterCount');
     const storedWord = localStorage.getItem('word');
+    const storedLanguage = localStorage.getItem('language');
     
     if (!storedPlayers || !storedImposterCount || !storedWord) {
       navigate('/');
@@ -40,6 +41,9 @@ const GamePage: React.FC = () => {
     setPlayers(parsedPlayers);
     setImposterCount(Number(storedImposterCount));
     setWord(storedWord);
+    if (storedLanguage) {
+      setLanguage(storedLanguage);
+    }
     
     // Randomly select imposters
     const playerIndexes = Array.from({ length: parsedPlayers.length }, (_, i) => i);
@@ -73,6 +77,7 @@ const GamePage: React.FC = () => {
     localStorage.removeItem('players');
     localStorage.removeItem('imposterCount');
     localStorage.removeItem('word');
+    localStorage.removeItem('language');
     
     navigate('/');
   };

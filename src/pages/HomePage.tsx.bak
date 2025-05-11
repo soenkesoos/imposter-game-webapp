@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { faker as fakerEN } from '@faker-js/faker';
-import { fakerDE } from '@faker-js/faker';
+import { faker } from '@faker-js/faker';
 import { 
   Container, 
   Card, 
@@ -70,10 +69,14 @@ const HomePage: React.FC = () => {
     setError('');
     
     try {
-      // Generate a random word using Faker.js with the appropriate locale
-      const word = language === 'english' 
-        ? fakerEN.word.noun()
-        : fakerDE.word.noun();
+      // Generate a random word using Faker.js
+      // Configure faker locale based on selected language
+      const localeFaker = language === 'english' 
+        ? faker.localize('en')
+        : faker.localize('de');
+      
+      // Get a random noun
+      const word = localeFaker.word.noun();
       
       // Store game data in local storage
       localStorage.setItem('players', JSON.stringify(validPlayers));
@@ -169,7 +172,7 @@ const HomePage: React.FC = () => {
           <option value="german">German</option>
         </Select>
         <p style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-          Random nouns will be generated locally
+          Random nouns will be fetched from online APIs
         </p>
         
         <Spacer size="medium" />
