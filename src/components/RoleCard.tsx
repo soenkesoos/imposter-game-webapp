@@ -25,6 +25,7 @@ interface RoleCardProps {
   isImposter: boolean;
   word: string;
   onBack: () => void;
+  playerId?: number; // Add playerId prop to detect player changes
 }
 
 const CardContainer = styled.div`
@@ -193,19 +194,19 @@ const DraggableArea = styled.div`
   }
 `;
 
-const RoleCard: React.FC<RoleCardProps> = ({ isImposter, word, onBack }) => {
+const RoleCard: React.FC<RoleCardProps> = ({ isImposter, word, onBack, playerId }) => {
   const [dragPosition, setDragPosition] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [springAnimation, setSpringAnimation] = useState(false);
-  const [playerEmoji, setPlayerEmoji] = useState(getRandomEmoji());
+  const [playerEmoji, setPlayerEmoji] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const slidingCardRef = useRef<HTMLDivElement>(null);
   
-  // Generate a new emoji when props change (new card is shown)
+  // Generate a new emoji when component mounts or player changes
   useEffect(() => {
     setPlayerEmoji(getRandomEmoji());
-  }, [isImposter, word]);
+  }, [playerId]);
   
   // Calculate the max drag - only slide up halfway to reveal the word
   const getMaxDrag = () => {

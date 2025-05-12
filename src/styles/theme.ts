@@ -1,7 +1,7 @@
 // Theme configuration for the application
 const theme = {
   colors: {
-    primary: '#4a6fa5',
+    primary: '#ff5e62', // Updated to match the card color
     secondary: '#ff6b6b',
     background: '#222222',
     text: '#ffffff',

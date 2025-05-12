@@ -78,6 +78,20 @@ const StartGameView = styled.div`
   }
 `;
 
+const NewGameButton = styled(Button)`
+  background-color: #ff5e62;
+  font-size: 18px;
+  padding: 15px;
+  border-radius: 30px;
+  box-shadow: 0 4px 10px rgba(255, 94, 98, 0.3);
+  transition: all 0.2s ease;
+  
+  &:active {
+    transform: translateY(4px);
+    box-shadow: 0 1px 5px rgba(255, 94, 98, 0.3);
+  }
+`;
+
 interface Player {
   id: number;
   name: string;
@@ -169,9 +183,11 @@ const GamePage: React.FC = () => {
           <PlayerName>{currentPlayer.name}'s Turn</PlayerName>
           <CardWrapper>
             <RoleCard
+              key={currentPlayer.id} // Add key to force re-render when player changes
               isImposter={isImposter(currentPlayerIndex)}
               word={word}
               onBack={handleNextPlayer}
+              playerId={currentPlayer.id} // Pass the player ID to the RoleCard
             />
           </CardWrapper>
         </FullWidthCard>
@@ -184,7 +200,7 @@ const GamePage: React.FC = () => {
     return (
       <GameContainer>
         <FullWidthCard>
-          <Title style={{ color: 'white' }}>Game Started!</Title>
+          <Title style={{ color: '#ff5e62' }}>Game Started!</Title>
           <InstructionText>All players know their roles now.</InstructionText>
           
           <StartGameView>
@@ -195,7 +211,7 @@ const GamePage: React.FC = () => {
           
           <Spacer size="large" />
           
-          <Button onClick={handleBackToHome}>New Game</Button>
+          <NewGameButton onClick={handleBackToHome}>New Game</NewGameButton>
         </FullWidthCard>
       </GameContainer>
     );
