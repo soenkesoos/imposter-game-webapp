@@ -38,13 +38,13 @@ const CardContainer = styled.div`
 `;
 
 // Word panel positioned below the card
-const WordPanel = styled.div<{ isImposter: boolean; revealed: boolean }>`
+const WordPanel = styled.div<{ $isImposter: boolean; $revealed: boolean }>`
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 180px;
-  background-color: ${props => props.isImposter ? 'black' : 'white'};
+  background-color: ${props => props.$isImposter ? 'black' : 'white'};
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -53,7 +53,7 @@ const WordPanel = styled.div<{ isImposter: boolean; revealed: boolean }>`
   z-index: 1; // Below the sliding card
   pointer-events: none; // Prevent interaction with this panel
   user-select: none;
-  opacity: 1; //${props => props.revealed ? 1 : 0}; 
+  opacity: ${props => props.$revealed ? 1 : 1}; // We're setting opacity to 1 regardless now
   transition: opacity 0.2s ease-in;
   box-shadow: ${theme.boxShadow};
 `;
@@ -66,15 +66,20 @@ const WordContent = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  user-select: none; /* Prevent text selection */
+  -webkit-user-select: none; /* For Safari */
+  -moz-user-select: none; /* For Firefox */
+  -ms-user-select: none; /* For IE10+/Edge */
+  pointer-events: none; /* Additionally prevents interactions */
 `;
 
-const SlidingCard = styled.div<{ translateY: number }>`
+const SlidingCard = styled.div<{ $translateY: number }>`
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   height: 100%;
-  transform: translateY(${props => props.translateY}px);
+  transform: translateY(${props => props.$translateY}px);
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   border-radius: ${theme.borderRadius};
   box-shadow: ${theme.boxShadow};
@@ -108,13 +113,28 @@ const PlayerImage = styled.div`
 
 const CardBottom = styled.div`
   width: 100%;
-  height: 30%;
+  height: 40%;
   background-color: #ff5e62;
   border-bottom-left-radius: ${theme.borderRadius};
   border-bottom-right-radius: ${theme.borderRadius};
   display: flex;
   align-items: center;
   justify-content: center;
+  user-select: none; // Prevent text selection
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 5px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    margin-top: 10px;
+  }
 `;
 
 const PlayerAvatar = styled.div`
@@ -148,12 +168,17 @@ const RevealInstruction = styled.div`
   }
 `;
 
-const RoleTitle = styled(Title)<{ isImposter: boolean }>`
-  color: ${props => props.isImposter ? 'white' : 'black'};
+const RoleTitle = styled(Title)<{ $isImposter: boolean }>`
+  color: ${props => props.$isImposter ? 'white' : 'black'};
   font-size: 32px;
   margin-bottom: ${theme.spacing.medium};
   margin-top: 0;
-  text-shadow: ${props => props.isImposter ? '0 2px 10px rgba(255, 255, 255, 0.3)' : '0 2px 10px rgba(0, 0, 0, 0.3)'};
+  text-shadow: ${props => props.$isImposter ? '0 2px 10px rgba(255, 255, 255, 0.3)' : '0 2px 10px rgba(0, 0, 0, 0.3)'};
+  user-select: none; /* Prevent text selection */
+  -webkit-user-select: none; /* For Safari */
+  -moz-user-select: none; /* For Firefox */
+  -ms-user-select: none; /* For IE10+/Edge */
+  pointer-events: none; /* Additionally prevents interactions */
 `;
 
 const CoverText = styled.div`
@@ -161,6 +186,15 @@ const CoverText = styled.div`
   font-size: 18px;
   font-weight: bold;
   text-align: center;
+  padding: 20px;
+  user-select: none; // Prevent text selection
+  animation: pulse 2s infinite;
+  
+  @keyframes pulse {
+    0% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0); }
+  }
 `;
 
 const NextButton = styled(Button)`
@@ -180,6 +214,7 @@ const NextButton = styled(Button)`
   }
 `;
 
+// DraggableArea now covers the entire card 
 const DraggableArea = styled.div`
   position: absolute;
   top: 0;
@@ -187,7 +222,13 @@ const DraggableArea = styled.div`
   right: 0;
   bottom: 0;
   cursor: grab;
-  z-index: 3;
+  z-index: 40; /* Even higher z-index to ensure it's above everything */
+  touch-action: none; /* Prevent browser handling of touch events */
+  background-color: transparent; /* Make it invisible but still interactive */
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS */
+  -webkit-touch-callout: none; /* Disable callout on long-press */
+  -webkit-user-select: none; /* Disable selection on iOS */
+  user-select: none;
   
   &:active {
     cursor: grabbing;
@@ -200,6 +241,8 @@ const RoleCard: React.FC<RoleCardProps> = ({ isImposter, word, onBack, playerId 
   const [revealed, setRevealed] = useState(false);
   const [springAnimation, setSpringAnimation] = useState(false);
   const [playerEmoji, setPlayerEmoji] = useState('');
+  const [initialTouchY, setInitialTouchY] = useState<number | null>(null);
+  const [initialMouseY, setInitialMouseY] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const slidingCardRef = useRef<HTMLDivElement>(null);
   
@@ -211,166 +254,122 @@ const RoleCard: React.FC<RoleCardProps> = ({ isImposter, word, onBack, playerId 
   // Calculate the max drag - only slide up halfway to reveal the word
   const getMaxDrag = () => {
     if (!slidingCardRef.current) return -300;
-    return -slidingCardRef.current.clientHeight / 2; // Only slide half way
+    return -slidingCardRef.current.clientHeight * 0.2; // Only slide half way
   };
   
-  // Touch event handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    document.body.classList.add('no-scroll'); // Prevent body scrolling
-    setIsDragging(true);
-  };
-  
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || !slidingCardRef.current) return;
-    
-    const touch = e.touches[0];
-    const containerRect = slidingCardRef.current.getBoundingClientRect();
+  // Common drag position calculation logic
+  const calculateDragPosition = (delta: number) => {
     const maxDrag = getMaxDrag();
     
-    // Calculate new position (negative value = sliding up)
-    let newPosition = -(containerRect.top - touch.clientY + 50);
+    // Calculate new position based on the delta
+    let newPosition = -delta;
     
-    // Limit dragging with resistance when pulled beyond limits
+    // Apply resistance when pulled beyond limits
     if (newPosition < maxDrag) {
-      // Add resistance when pulling beyond the max
-      newPosition = maxDrag + (newPosition - maxDrag) * 0.2;
+      newPosition = maxDrag + (newPosition - maxDrag) * 0.15;
     }
     
     // Don't allow positive drag (sliding down beyond initial position)
     newPosition = Math.min(0, newPosition);
     
+    // Apply the position
     setDragPosition(newPosition);
     
+    // Update revealed state based on position
     if (newPosition < maxDrag / 2) {
       setRevealed(true);
     } else {
       setRevealed(false);
     }
-    
-    e.preventDefault();
   };
   
-  const handleTouchEnd = () => {
-    document.body.classList.remove('no-scroll'); // Re-enable body scrolling
+  // Common handler for ending drag
+  const endDrag = () => {
+    document.body.classList.remove('no-scroll');
     setIsDragging(false);
+    setInitialTouchY(null);
+    setInitialMouseY(null);
     
     // Spring back animation
     setSpringAnimation(true);
     setTimeout(() => {
       setDragPosition(0);
-      setRevealed(false); // Make sure to hide the word when the card springs back
+      setRevealed(false);
       setTimeout(() => {
         setSpringAnimation(false);
       }, 300);
     }, 50);
+  };
+  
+  // Touch event handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Don't prevent default on touchStart for iOS compatibility
+    // This helps ensure iOS devices recognize the touch event properly
+    document.body.classList.add('no-scroll'); // Prevent body scrolling
+    setIsDragging(true);
+    
+    // Immediately start processing the touch to avoid needing to drag outside the card
+    if (e.touches && e.touches[0] && slidingCardRef.current) {
+      const touch = e.touches[0];
+      setInitialTouchY(touch.clientY); // Store the initial touch position
+      // We don't actually move the card here, just establish that we're ready to drag
+    }
+  };
+  
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !slidingCardRef.current || initialTouchY === null) return;
+
+    // Prevent default to avoid scrolling on iOS
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    const touchDelta = initialTouchY - touch.clientY;
+    calculateDragPosition(touchDelta);
+  };
+  
+  const handleTouchEnd = () => {
+    endDrag();
   };
   
   // Mouse event handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     document.body.classList.add('no-scroll'); // Prevent body scrolling
     setIsDragging(true);
+    setInitialMouseY(e.clientY); // Store the initial mouse position
   };
   
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !slidingCardRef.current) return;
+    if (!isDragging || !slidingCardRef.current || initialMouseY === null) return;
     
-    const maxDrag = getMaxDrag();
-    
-    // Calculate new position (negative value = sliding up)
-    let newPosition = -(slidingCardRef.current.getBoundingClientRect().top - e.clientY + 50);
-    
-    // Limit dragging with resistance
-    if (newPosition < maxDrag) {
-      newPosition = maxDrag + (newPosition - maxDrag) * 0.2;
-    }
-    
-    // Don't allow positive drag (sliding down beyond initial position)
-    newPosition = Math.min(0, newPosition);
-    
-    setDragPosition(newPosition);
-    
-    if (newPosition < maxDrag / 2) {
-      setRevealed(true);
-    } else {
-      setRevealed(false);
-    }
+    const mouseDelta = initialMouseY - e.clientY;
+    calculateDragPosition(mouseDelta);
   };
   
   const handleMouseUp = () => {
-    document.body.classList.remove('no-scroll'); // Re-enable body scrolling
-    setIsDragging(false);
-    
-    // Spring back animation
-    setSpringAnimation(true);
-    setTimeout(() => {
-      setDragPosition(0);
-      setRevealed(false); // Make sure to hide the word when the card springs back
-      setTimeout(() => {
-        setSpringAnimation(false);
-      }, 300);
-    }, 50);
+    endDrag();
   };
   
   useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (isDragging && slidingCardRef.current) {
-        const maxDrag = getMaxDrag();
-          
-        let newPosition = -(slidingCardRef.current.getBoundingClientRect().top - e.clientY + 50);
-          
-        if (newPosition < maxDrag) {
-          newPosition = maxDrag + (newPosition - maxDrag) * 0.2;
-        }
-          
-        // Don't allow positive drag (sliding down beyond initial position)
-        newPosition = Math.min(0, newPosition);
-        
-        setDragPosition(newPosition);
-          
-        if (newPosition < maxDrag / 2) {
-          setRevealed(true);
-        } else {
-          setRevealed(false);
-        }
+      if (isDragging && slidingCardRef.current && initialMouseY !== null) {
+        const mouseDelta = initialMouseY - e.clientY;
+        calculateDragPosition(mouseDelta);
       }
     };
     
     const handleGlobalMouseUp = () => {
       if (isDragging) {
-        document.body.classList.remove('no-scroll');
-        setIsDragging(false);
-        
-        setSpringAnimation(true);
-        setTimeout(() => {
-          setDragPosition(0);
-          setRevealed(false); // Hide the word when the card springs back
-          setTimeout(() => {
-            setSpringAnimation(false);
-          }, 300);
-        }, 50);
+        endDrag();
       }
     };
     
     const handleGlobalTouchMove = (e: TouchEvent) => {
-      if (isDragging && slidingCardRef.current && e.touches && e.touches[0]) {
-        const maxDrag = getMaxDrag();
+      if (isDragging && slidingCardRef.current && e.touches && e.touches[0] && initialTouchY !== null) {
+        // Prevent default to stop scrolling
+        e.preventDefault();
         
-        let newPosition = -(slidingCardRef.current.getBoundingClientRect().top - e.touches[0].clientY + 50);
-        
-        if (newPosition < maxDrag) {
-          newPosition = maxDrag + (newPosition - maxDrag) * 0.2;
-        }
-        
-        // Don't allow positive drag (sliding down beyond initial position)
-        newPosition = Math.min(0, newPosition);
-        
-        setDragPosition(newPosition);
-        
-        if (newPosition < maxDrag / 2) {
-          setRevealed(true);
-        } else {
-          setRevealed(false);
-        }
+        const touchDelta = initialTouchY - e.touches[0].clientY;
+        calculateDragPosition(touchDelta);
       }
     };
     
@@ -386,14 +385,14 @@ const RoleCard: React.FC<RoleCardProps> = ({ isImposter, word, onBack, playerId 
       document.removeEventListener('touchend', handleGlobalMouseUp);
       document.body.classList.remove('no-scroll');
     };
-  }, [isDragging]);
+  }, [isDragging, initialTouchY, initialMouseY]);
   
   return (
     <CardContainer ref={containerRef} className="no-select">
       {/* Word Panel that appears when the card slides up */}
-      <WordPanel isImposter={isImposter} revealed={revealed}>
+      <WordPanel $isImposter={isImposter} $revealed={revealed}>
         <WordContent>
-          <RoleTitle isImposter={isImposter}>
+          <RoleTitle $isImposter={isImposter}>
             {isImposter ? 'Impostor' : word}
           </RoleTitle>
         </WordContent>
@@ -401,7 +400,7 @@ const RoleCard: React.FC<RoleCardProps> = ({ isImposter, word, onBack, playerId 
       
       {/* Sliding Card that covers the word */}
       <SlidingCard 
-        translateY={dragPosition}
+        $translateY={dragPosition}
         ref={slidingCardRef}
         className={springAnimation ? 'spring-animation' : ''}
       >
@@ -410,22 +409,23 @@ const RoleCard: React.FC<RoleCardProps> = ({ isImposter, word, onBack, playerId 
             <PlayerAvatar>
               <span role="img" aria-label="player avatar" style={{ fontSize: '150px' }}>{playerEmoji}</span>
             </PlayerAvatar>
-            
-            <RevealInstruction>
-              <svg viewBox="0 0 24 24">
-                <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
-              </svg>
-              Move up to reveal
-            </RevealInstruction>
+           
           </PlayerImage>
           
           <CardBottom>
-            <CoverText>Slide up to reveal</CoverText>
+            <CoverText>
+              <svg viewBox="0 0 24 24" style={{ width: '24px', height: '24px', marginBottom: '8px' }}>
+                <path d="M7.41 15.41L12 10.83l4.59 4.58L18 14l-6-6-6 6z"/>
+              </svg>
+              <div>Slide up to reveal</div>
+            </CoverText>
           </CardBottom>
           
           <DraggableArea 
             onMouseDown={handleMouseDown}
             onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           />
         </CardContent>
       </SlidingCard>
