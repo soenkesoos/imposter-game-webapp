@@ -66,12 +66,13 @@ export const Select = styled.select`
 `;
 
 export const Card = styled.div`
-  background-color: ${theme.colors.white};
+  background-color: ${theme.colors.darkCard};
   border-radius: ${theme.borderRadius};
   padding: ${theme.spacing.large};
   box-shadow: ${theme.boxShadow};
   margin: ${theme.spacing.medium} 0;
   width: 100%;
+  border: 1px solid ${theme.colors.darkBorder};
 `;
 
 export const Title = styled.h1`

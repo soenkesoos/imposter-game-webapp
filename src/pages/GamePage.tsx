@@ -9,6 +9,74 @@ import {
   Spacer
 } from '../components/StyledComponents';
 import RoleCard from '../components/RoleCard';
+import styled from 'styled-components';
+import theme from '../styles/theme';
+
+const GameContainer = styled(Container)`
+  position: relative;
+  max-width: 100%;
+  padding: 0;
+  background-color: #121212;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent scrolling */
+  height: 100vh; /* Full viewport height */
+  position: fixed; /* Fix position to prevent scrolling */
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+`;
+
+const FullWidthCard = styled(Card)`
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  border-radius: 0;
+  height: 100%;
+  overflow-y: auto; /* Allow scrolling within the card if needed */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  box-shadow: none;
+  padding-top: 20px;
+  padding-bottom: 30px;
+  background-color: #1e1e1e;
+`;
+
+const PlayerName = styled(Title)`
+  font-size: 24px;
+  margin-bottom: ${theme.spacing.medium};
+  color: white;
+`;
+
+const CardWrapper = styled.div`
+  width: 100%;
+  padding: 0 ${theme.spacing.medium};
+  margin-top: 10px;
+  height: 500px; /* Match the height of the RoleCard container */
+  position: relative;
+  overflow: visible; /* Allow card to slide up beyond the wrapper */
+`;
+
+const InstructionText = styled(SubTitle)`
+  color: white;
+  opacity: 0.9;
+  text-align: center;
+  margin-bottom: ${theme.spacing.large};
+`;
+
+const StartGameView = styled.div`
+  text-align: center;
+  color: white;
+  padding: ${theme.spacing.large};
+  
+  p {
+    margin-bottom: ${theme.spacing.medium};
+    opacity: 0.9;
+  }
+`;
 
 interface Player {
   id: number;
@@ -21,9 +89,19 @@ const GamePage: React.FC = () => {
   const [imposterCount, setImposterCount] = useState<number>(1);
   const [word, setWord] = useState<string>('');
   const [language, setLanguage] = useState<string>('english');
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState<number>(-1);
-  const [showingRole, setShowingRole] = useState<boolean>(false);
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState<number>(0); // Start with the first player directly
+  const [showingRole, setShowingRole] = useState<boolean>(true); // Always show role by default
   const [imposters, setImposters] = useState<number[]>([]);
+  
+  useEffect(() => {
+    // Add class to body to prevent scrolling
+    document.body.classList.add('game-page');
+    
+    return () => {
+      // Clean up by removing the class when component unmounts
+      document.body.classList.remove('game-page');
+    };
+  }, []);
   
   useEffect(() => {
     // Load game data from local storage
@@ -54,22 +132,13 @@ const GamePage: React.FC = () => {
   }, [navigate]);
   
   const handleNextPlayer = () => {
-    if (currentPlayerIndex === -1) {
-      // First player
-      setCurrentPlayerIndex(0);
-    } else if (currentPlayerIndex < players.length - 1) {
-      // Next player
+    if (currentPlayerIndex < players.length - 1) {
+      // Next player - we don't need to toggle showingRole anymore since it's always true
       setCurrentPlayerIndex(prev => prev + 1);
-      setShowingRole(false);
     } else {
       // All players have seen their roles
       setCurrentPlayerIndex(-2); // -2 indicates end of role reveal
-      setShowingRole(false);
     }
-  };
-  
-  const handleShowRole = () => {
-    setShowingRole(true);
   };
   
   const handleBackToHome = () => {
@@ -87,76 +156,58 @@ const GamePage: React.FC = () => {
   };
   
   if (players.length === 0) {
-    return <Container>Loading...</Container>;
+    return <GameContainer>Loading...</GameContainer>;
   }
   
-  // Role selection screen
+  // Role selection screen - now immediately shows the role card
   if (currentPlayerIndex >= 0 && currentPlayerIndex < players.length) {
     const currentPlayer = players[currentPlayerIndex];
     
     return (
-      <Container>
-        <Card>
-          <Title>{currentPlayer.name}'s Turn</Title>
-          
-          {!showingRole ? (
-            <>
-              <SubTitle>Ready to see if you're an imposter?</SubTitle>
-              <Spacer size="large" />
-              <Button onClick={handleShowRole}>Show My Status</Button>
-            </>
-          ) : (
+      <GameContainer>
+        <FullWidthCard>
+          <PlayerName>{currentPlayer.name}'s Turn</PlayerName>
+          <CardWrapper>
             <RoleCard
               isImposter={isImposter(currentPlayerIndex)}
               word={word}
               onBack={handleNextPlayer}
             />
-          )}
-        </Card>
-      </Container>
+          </CardWrapper>
+        </FullWidthCard>
+      </GameContainer>
     );
   }
   
   // Game has started (all players have seen their roles)
   if (currentPlayerIndex === -2) {
     return (
-      <Container>
-        <Card>
-          <Title>Game Started!</Title>
-          <SubTitle>All players know if they are an imposter or not.</SubTitle>
+      <GameContainer>
+        <FullWidthCard>
+          <Title style={{ color: 'white' }}>Game Started!</Title>
+          <InstructionText>All players know their roles now.</InstructionText>
           
-          <Spacer size="large" />
-          
-          <p>The game has started! All players should now discuss.</p>
-          <p>Regular players know the secret word and should talk about it without directly saying it.</p>
-          <p>Imposters should try to blend in without getting caught!</p>
+          <StartGameView>
+            <p>The game has started! All players should now discuss.</p>
+            <p>Regular players know the secret word and should talk about it without directly saying it.</p>
+            <p>Imposters should try to blend in without getting caught!</p>
+          </StartGameView>
           
           <Spacer size="large" />
           
           <Button onClick={handleBackToHome}>New Game</Button>
-        </Card>
-      </Container>
+        </FullWidthCard>
+      </GameContainer>
     );
   }
   
-  // Initial screen
+  // Fallback view - should not normally be needed but included for safety
   return (
-    <Container>
-      <Card>
-        <Title>Imposter Game</Title>
-        <SubTitle>Pass the device around</SubTitle>
-        
-        <Spacer size="large" />
-        
-        <p>Each player will get to see if they are an imposter or not.</p>
-        <p>Non-imposters will see the secret word.</p>
-        <p>Don't show your screen to other players!</p>
-        
-        <Spacer size="large" />
-        
-        <Button onClick={handleNextPlayer}>Start</Button>
-      </Card>
-    </Container>
+    <GameContainer>
+      <FullWidthCard>
+        <Title style={{ color: 'white' }}>Loading Game...</Title>
+      </FullWidthCard>
+    </GameContainer>
   );
 };
 
