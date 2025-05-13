@@ -4,6 +4,7 @@ import styled from 'styled-components';
 interface LogoProps {
   size?: 'small' | 'medium' | 'large';
   className?: string;
+  type?: 'normal' | 'mask' | 'sneaky';
 }
 
 const LogoImage = styled.img<{ $size: string }>`
@@ -19,14 +20,25 @@ const LogoImage = styled.img<{ $size: string }>`
   object-fit: contain;
 `;
 
-const Logo: React.FC<LogoProps> = ({ size = 'medium', className }) => {
+const Logo: React.FC<LogoProps> = ({ size = 'medium', className, type = 'normal' }) => {
   // Choose the appropriate logo size based on the size prop
   const logoSrc = () => {
-    switch(size) {
-      case 'small': return '/mask_32px.png';
-      case 'medium': return '/logo128.png';
-      case 'large': return '/logo256.png';
-      default: return '/logo128.png';
+    if (type === 'mask') {
+      switch(size) {
+        case 'small': return '/mask_32px.png';
+        case 'medium': return '/mask_64px.png';
+        case 'large': return '/mask_64px.png';
+        default: return '/mask_32px.png';
+      }
+    } else if (type === 'sneaky') {
+      return '/mask_32px.png'; // Use the mask icon for sneaky imposter
+    } else {
+      switch(size) {
+        case 'small': return '/logo128.png';
+        case 'medium': return '/logo128.png';
+        case 'large': return '/logo256.png';
+        default: return '/logo128.png';
+      }
     }
   };
 

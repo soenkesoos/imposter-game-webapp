@@ -393,7 +393,7 @@ const RoleCard: React.FC<RoleCardProps> = ({ isImposter, word, onBack, playerId 
       {/* Word Panel that appears when the card slides up */}
       <WordPanel $isImposter={isImposter} $revealed={revealed}>
         <WordContent>
-          {isImposter && <Logo size="small" />}
+          {isImposter && <Logo size="small" type="mask" />}
           <RoleTitle $isImposter={isImposter}>
             {isImposter ? 'Impostor' : word}
           </RoleTitle>

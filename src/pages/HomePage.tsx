@@ -14,6 +14,7 @@ import {
 } from '../components/StyledComponents';
 import PlayerInput from '../components/PlayerInput';
 import Logo from '../components/Logo';
+import StartButton from '../components/StartButton';
 import styled from 'styled-components';
 
 interface Player {
@@ -238,13 +239,11 @@ const HomePage: React.FC = () => {
         
         <Spacer size="medium" />
         
-        <Button 
-          type="button" 
+        <StartButton 
           onClick={handleStartGame}
           disabled={isLoading}
-        >
-          {isLoading ? 'Loading...' : 'Start Game'}
-        </Button>
+          isLoading={isLoading}
+        />
         
         {error && (
           <>
