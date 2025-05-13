@@ -13,6 +13,8 @@ import {
   Spacer
 } from '../components/StyledComponents';
 import PlayerInput from '../components/PlayerInput';
+import Logo from '../components/Logo';
+import styled from 'styled-components';
 
 interface Player {
   id: number;
@@ -20,6 +22,20 @@ interface Player {
 }
 
 type Language = 'english' | 'german';
+
+const LogoContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
+const GameTitle = styled.h1`
+  color: #ff5e62;
+  font-size: 32px;
+  margin: 10px 0;
+  text-align: center;
+`;
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -169,7 +185,10 @@ const HomePage: React.FC = () => {
   return (
     <Container>
       <Card>
-        <Title>Imposter Game</Title>
+        <LogoContainer>
+          <Logo size="large" />
+          <GameTitle>Imposter Game</GameTitle>
+        </LogoContainer>
         
         <SubTitle>Players</SubTitle>
         {players.map((player, index) => (

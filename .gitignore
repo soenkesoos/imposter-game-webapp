@@ -1,7 +1,5 @@
 .DS_Store
-*.png
-*.jpg
-*.jpeg
+reference.jpeg
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies

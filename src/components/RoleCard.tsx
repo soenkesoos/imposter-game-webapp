@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Card, Title, Button } from './StyledComponents';
 import theme from '../styles/theme';
 import { faker } from '@faker-js/faker';
+import Logo from './Logo';
 
 // Function to get a random emoji
 const getRandomEmoji = () => {
@@ -392,6 +393,7 @@ const RoleCard: React.FC<RoleCardProps> = ({ isImposter, word, onBack, playerId 
       {/* Word Panel that appears when the card slides up */}
       <WordPanel $isImposter={isImposter} $revealed={revealed}>
         <WordContent>
+          {isImposter && <Logo size="small" />}
           <RoleTitle $isImposter={isImposter}>
             {isImposter ? 'Impostor' : word}
           </RoleTitle>

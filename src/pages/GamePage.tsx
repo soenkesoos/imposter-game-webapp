@@ -11,6 +11,7 @@ import {
 import RoleCard from '../components/RoleCard';
 import styled from 'styled-components';
 import theme from '../styles/theme';
+import Logo from '../components/Logo';
 
 const GameContainer = styled(Container)`
   position: relative;
@@ -206,7 +207,7 @@ const GamePage: React.FC = () => {
           <StartGameView>
             <p>The game has started! All players should now discuss.</p>
             <p>Regular players know the secret word and should talk about it without directly saying it.</p>
-            <p>Imposters should try to blend in without getting caught!</p>
+            <p>Imposters should try to blend in without getting caught!</p> <Logo size="small" />
           </StartGameView>
           
           <Spacer size="large" />
