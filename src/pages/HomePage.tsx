@@ -16,6 +16,7 @@ import PlayerInput from '../components/PlayerInput';
 import Logo from '../components/Logo';
 import StartButton from '../components/StartButton';
 import styled from 'styled-components';
+import { getWordHistory, addWordToHistory, isWordInHistory } from '../utils/wordHistory';
 
 interface Player {
   id: number;
@@ -104,6 +105,43 @@ const HomePage: React.FC = () => {
     setPlayers(prev => prev.filter(player => player.id !== id));
   };
   
+  /**
+   * Generate a unique word that hasn't been used in the last 100 games
+   */
+  const generateUniqueWord = (lang: Language): string => {
+    const wordHistory = getWordHistory();
+    
+    // Log current word history for debugging
+    console.debug(`Current word history (${wordHistory.length} words):`, wordHistory);
+    
+    // Maximum number of attempts to find a unique word
+    const maxAttempts = 20;
+    
+    // Try to find a unique word
+    for (let i = 0; i < maxAttempts; i++) {
+      const word = lang === 'english' 
+        ? fakerEN.word.noun()
+        : fakerDE.word.noun();
+      
+      // If the word is not in history, use it
+      if (!wordHistory.includes(word)) {
+        console.debug(`Found unique word: ${word} (attempt ${i + 1}/${maxAttempts})`);
+        return word;
+      }
+      
+      console.debug(`Word "${word}" is in history, trying again...`);
+    }
+    
+    // If we couldn't find a unique word after max attempts,
+    // force a unique word by adding a random number to it
+    const baseWord = lang === 'english' 
+        ? fakerEN.word.noun()
+        : fakerDE.word.noun();
+    
+    console.debug(`Couldn't find unique word after ${maxAttempts} attempts, using: ${baseWord}`);
+    return baseWord;
+  };
+
   const handleStartGame = async () => {
     // Validate player names
     const validPlayers = players.filter(player => player.name.trim() !== '');
@@ -122,10 +160,11 @@ const HomePage: React.FC = () => {
     setError('');
     
     try {
-      // Generate a random word using Faker.js with the appropriate locale
-      const word = language === 'english' 
-        ? fakerEN.word.noun()
-        : fakerDE.word.noun();
+      // Generate a random unique word not in the history
+      const word = generateUniqueWord(language);
+      
+      // Add the word to history
+      addWordToHistory(word);
       
       // Store game data in local storage
       localStorage.setItem('players', JSON.stringify(validPlayers));
@@ -150,7 +189,23 @@ const HomePage: React.FC = () => {
         german: ['Katze', 'Hund', 'Haus', 'Baum', 'Buch', 'Auto', 'Telefon', 'Stuhl', 'Schuh', 'Sonne']
       };
       
-      const fallbackWord = fallbackWords[language][Math.floor(Math.random() * fallbackWords[language].length)];
+      // Try to find a fallback word that's not in history
+      let fallbackWord = '';
+      const history = getWordHistory();
+      
+      const availableFallbacks = fallbackWords[language].filter(w => !history.includes(w));
+      
+      if (availableFallbacks.length > 0) {
+        // Use a random word from the available fallbacks
+        fallbackWord = availableFallbacks[Math.floor(Math.random() * availableFallbacks.length)];
+      } else {
+        // If all fallbacks are in history, just use any random fallback
+        fallbackWord = fallbackWords[language][Math.floor(Math.random() * fallbackWords[language].length)];
+      }
+      
+      // Add the fallback word to history
+      addWordToHistory(fallbackWord);
+      
       localStorage.setItem('players', JSON.stringify(validPlayers));
       localStorage.setItem('imposterCount', imposterCount.toString());
       localStorage.setItem('language', language);
@@ -234,7 +289,7 @@ const HomePage: React.FC = () => {
           <option value="german">German</option>
         </Select>
         <p style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
-          Random nouns will be generated locally
+          Random nouns will be generated locally (words won't repeat for 100 games)
         </p>
         
         <Spacer size="medium" />
